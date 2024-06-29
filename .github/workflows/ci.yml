@@ -1,4 +1,4 @@
-name: Node.js CI
+name: CI/CD Pipeline
 
 on:
  push:
@@ -23,3 +23,28 @@ jobs:
      node-version: ${{ matrix.node-version }}
   - run: npm install
   - run: npm test
+
+ deploy:
+  needs: build
+
+  runs-on: ubuntu-latest
+
+  steps:
+  - uses: actions/checkout@v2
+  - name: Set up git configuration 
+    run: |
+     git config --global user.email "kasiryemoses1@gmail.com"
+     git config --global user.name "kasiryem"
+ 
+  - name: Deploy to Heroku
+    env:
+      HEROKU_API_KEY: $ {{ secrets.HEROKU_API_KEY }} 
+      HEROKU_APP_NAME: my-node-app4  # Ensure this is the correct app name
+    run: |
+      echo "machine api.heroku.com login $ {{ secrets.HEROKU_EMAIL }} password $ {{ secrets.HEROKU_API_KEY }}" > ~/.netrc
+      echo "machine git.heroku.com login $ {{ secrets.HEROKU_EMAIL }} password $ {{ secrets.HEROKU_API_KEY }}" >> ~/.netrc
+      git remote add heroku https://git.heroku.com/${{ env.HEROKU_APP_NAME }}.git
+      git pull heroku main --rebase
+      git push heroku main
+
+
